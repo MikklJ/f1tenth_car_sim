@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/michaelji/f1tenth_docker_agent/catkin_ws/devel/setup.sh
