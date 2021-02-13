@@ -1,4 +1,4 @@
-#!/bin/bash
+!/bin/bash
 #if [ ! -d f1tenth_gym ] ; then
 #    git clone https://github.com/f1tenth/f1tenth_gym
 #else
@@ -21,4 +21,5 @@
 #    cd ..
 #fi
 
+# Call Docker-Compose
 docker-compose up --build

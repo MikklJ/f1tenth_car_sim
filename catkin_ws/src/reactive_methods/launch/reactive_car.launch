@@ -1,3 +1,3 @@
 <launch>
-	<node pkg="reactive_methods" name="FollowGap_node" type="reactive_gap_follow.py" />
+	<node pkg="reactive_methods" name="FollowGap_node" type="reactive_gap_follow.py" output="screen" />
 </launch>
