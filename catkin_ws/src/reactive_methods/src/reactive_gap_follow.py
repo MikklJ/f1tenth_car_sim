@@ -25,7 +25,7 @@ class reactive_follow_gap:
             2.Rejecting high values (eg. > 3m)
         """
         proc_ranges = list(ranges)
-        max_accepted_distance = 3
+        max_accepted_distance = 15
         
         for i in range(len(ranges)):
             if (math.isnan(ranges[i])):
@@ -81,6 +81,9 @@ class reactive_follow_gap:
         for i in range(start_i, end_i):
             if (ranges[i] > best_point):
                 best_point = ranges[i]
+        
+        print("\n")
+        print("Start index: " + str(start_i) + "\nEnd index: " + str(end_i) + "\nBest_point: " + str(best_point))
 
         return best_point
 
@@ -132,6 +135,11 @@ class reactive_follow_gap:
 
         print("Speed: ", ack_msg.drive.speed)
         print("Steering angle: ", best_steering_angle)
+        print("Bestpoint: ", best_point)
+        print("Angle increment(under data): ", data.angle_increment)
+        print("Distance: (" + str(len(proc_ranges)) + " / 2) - " + str(best_point) +  " = " + str(distance))
+        print("\n")
+        print(proc_ranges)
 
         # ack_msg.drive.acceleration = 2
         self.drive_pub.publish(ack_msg)
