@@ -18,16 +18,20 @@ class reactive_follow_gap:
 
         self.lidar_sub = rospy.Subscriber('/ego_id/scan', LaserScan, self.lidar_callback)
         self.drive_pub = rospy.Publisher('/ego_id/drive', AckermannDriveStamped, queue_size=100)
+        self.stored_ranges = []
 
     def preprocess_lidar(self, ranges):
         """ Preprocess the LiDAR scan array. Expert implementation includes:
             1.Setting each value to the mean over some window
             2.Rejecting high values (eg. > 3m)
         """
+        #temp_ranges = list(ranges)
+        #quarter_len = len(temp_ranges) / 4
+        #proc_ranges = temp_ranges[quarter_len:(len(temp_ranges) - quarter_len)]
         proc_ranges = list(ranges)
         max_accepted_distance = 15
         
-        for i in range(len(ranges)):
+        for i in range(len(proc_ranges)):
             if (math.isnan(ranges[i])):
                 proc_ranges[i] = 0
             elif ((ranges[i] > max_accepted_distance) or math.isinf(ranges[i])):
@@ -42,7 +46,6 @@ class reactive_follow_gap:
         """
         
         max_begin = 0
-        max_end = 0
         current_gap = 0
         current_begin = 0
         current_index = 0
@@ -76,12 +79,20 @@ class reactive_follow_gap:
         Return index of best point in ranges
 	Naive: Choose the furthest point within ranges and go there
         """
-        best_point = start_i
-
-        for i in range(start_i, end_i):
-            if (ranges[i] > best_point):
-                best_point = ranges[i]
+        #best_point = start_i
+        #for i in range(start_i, end_i):
+        #    if (ranges[i] > ranges[best_point]):
+        #        best_point = i
         
+        best_point = (start_i + end_i) / 2
+        #average_range = 0
+        #for i in range(start_i, end_i):
+        #    average_range += ranges[i]
+
+        #average_range /= (end_i - start_i)
+
+
+
         print("\n")
         print("Start index: " + str(start_i) + "\nEnd index: " + str(end_i) + "\nBest_point: " + str(best_point))
 
@@ -95,10 +106,10 @@ class reactive_follow_gap:
         proc_ranges = self.preprocess_lidar(ranges)
 
         #Find closest point to LiDAR
-        closest_point = proc_ranges[0]
+        closest_point = 0
         for i in range(len(proc_ranges)):
-            if (proc_ranges[i] < closest_point):
-                closest_point = proc_ranges[i]
+            if (proc_ranges[i] < proc_ranges[int(closest_point)]):
+                closest_point = i
 
         #Eliminate all points inside 'bubble' (set them to zero) 
         ratio_of_bubble_to_ranges = 10
@@ -129,9 +140,9 @@ class reactive_follow_gap:
         ack_msg.drive.steering_angle = best_steering_angle
 
         multiplier = 1
-        delta = abs(2 - ack_msg.drive.speed)
+        delta = abs(5 - ack_msg.drive.speed)
 
-        ack_msg.drive.speed = 1 / (1 + np.exp(-multiplier * delta))
+        ack_msg.drive.speed = 0.5 / (1 + np.exp(-multiplier * delta))
 
         print("Speed: ", ack_msg.drive.speed)
         print("Steering angle: ", best_steering_angle)
@@ -139,10 +150,37 @@ class reactive_follow_gap:
         print("Angle increment(under data): ", data.angle_increment)
         print("Distance: (" + str(len(proc_ranges)) + " / 2) - " + str(best_point) +  " = " + str(distance))
         print("\n")
-        print(proc_ranges)
+        #print(ranges)
+        self.print_ranges(proc_ranges)
+        """
+        if proc_ranges != self.stored_ranges:
+            print("Ranges changed")
+            try:
+                sum_delta = 0
+                for i in range(len(proc_ranges)):
+                    if (proc_ranges[i] != self.stored_ranges[i]):
+                        sum_delta += abs(self.stored_ranges[i] - proc_ranges[i])
 
+                sum_delta /= len(proc_ranges)
+                print ("Average change", sum_delta)
+            except:
+                pass
+        
+        self.stored_ranges = proc_ranges
+        """
         # ack_msg.drive.acceleration = 2
         self.drive_pub.publish(ack_msg)
+
+    def print_ranges(self, ranges):
+        interval_len = len(ranges) / 20
+        for i in range(len(ranges)):
+            if i % interval_len == 0:
+                print("Line ", i ,  ":", end='')
+                value_rounded_down = math.floor(ranges[i])
+                for i in range(int(value_rounded_down)):
+                    print("*", end='')
+                print()
+
 
 def main(args):
     rospy.init_node("FollowGap_node", anonymous=True)
